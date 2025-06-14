@@ -36,6 +36,23 @@ interface DiagnosisResult {
   severity: string;
 }
 
+interface XRayAnalysisResult {
+  success: boolean;
+  analysis: {
+    xray?: {
+      pathologies: [string, number][];
+      top_label: string;
+      top_prob: number;
+      clinical_explanation?: string;
+      gradcam_file?: string;
+      gradcam_b64?: string;
+    };
+    vitals?: any;
+    symptoms?: any;
+  };
+  filename: string;
+}
+
 const VitalsApp: React.FC = () => {
   const [patientData, setPatientData] = useState<PatientData>({
     name: '',
@@ -59,6 +76,8 @@ const VitalsApp: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [xrayFile, setXrayFile] = useState<XRayFile | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [xrayAnalysisResult, setXrayAnalysisResult] = useState<XRayAnalysisResult | null>(null);
+  const [xrayAnalyzing, setXrayAnalyzing] = useState(false);
 
   const handlePatientDataChange = (field: keyof PatientData, value: string) => {
     setPatientData(prev => ({
@@ -77,9 +96,10 @@ const VitalsApp: React.FC = () => {
     }
   };
 
-  const handleXRayUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleXRayUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     setUploadError(null);
+    setXrayAnalysisResult(null);
 
     if (!file) {
       setXrayFile(null);
@@ -102,13 +122,38 @@ const VitalsApp: React.FC = () => {
 
     // Create preview
     const reader = new FileReader();
-    reader.onload = (e) => {
-      setXrayFile({
+    reader.onload = async (e) => {
+      const xrayFileData = {
         file,
         preview: e.target?.result as string,
         name: file.name,
         size: file.size
-      });
+      };
+      setXrayFile(xrayFileData);
+
+      // Automatically analyze the X-ray
+      setXrayAnalyzing(true);
+      try {
+        const formData = new FormData();
+        formData.append('xray_image', file);
+
+        const response = await fetch('http://localhost:8000/analyze-xray', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Failed to analyze X-ray');
+        }
+
+        const analysisData: XRayAnalysisResult = await response.json();
+        setXrayAnalysisResult(analysisData);
+      } catch (err) {
+        setUploadError(err instanceof Error ? err.message : 'X-ray analysis failed');
+      } finally {
+        setXrayAnalyzing(false);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -455,13 +500,105 @@ const VitalsApp: React.FC = () => {
                     />
                   </div>
 
-                  <div className="flex items-center justify-center space-x-2 text-sm text-green-600">
-                    <CheckCircle className="w-4 h-4" />
-                    <span>X-ray image ready for analysis</span>
-                  </div>
+                  {/* Analysis Status */}
+                  {xrayAnalyzing ? (
+                    <div className="flex items-center justify-center space-x-2 text-sm text-blue-600">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Analyzing X-ray image...</span>
+                    </div>
+                  ) : xrayAnalysisResult ? (
+                    <div className="flex items-center justify-center space-x-2 text-sm text-green-600">
+                      <CheckCircle className="w-4 h-4" />
+                      <span>X-ray analysis completed</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center space-x-2 text-sm text-green-600">
+                      <CheckCircle className="w-4 h-4" />
+                      <span>X-ray image ready for analysis</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
+
+            {/* X-ray Analysis Results */}
+            {xrayAnalysisResult && xrayAnalysisResult.analysis.xray && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg"
+              >
+                <h3 className="font-semibold text-blue-800 mb-4 flex items-center">
+                  <Brain className="w-5 h-5 mr-2" />
+                  X-Ray AI Analysis Results
+                </h3>
+                
+                {/* Top Finding */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium text-gray-800">Primary Finding</h4>
+                    <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                      {(xrayAnalysisResult.analysis.xray.top_prob * 100).toFixed(1)}% confidence
+                    </span>
+                  </div>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {xrayAnalysisResult.analysis.xray.top_label}
+                  </p>
+                </div>
+
+                {/* Clinical Explanation */}
+                {xrayAnalysisResult.analysis.xray.clinical_explanation && (
+                  <div className="mb-4">
+                    <h4 className="font-medium text-gray-800 mb-2">Clinical Interpretation</h4>
+                    <div className="bg-white p-3 rounded border border-blue-100">
+                      <p className="text-gray-700 text-sm leading-relaxed">
+                        {xrayAnalysisResult.analysis.xray.clinical_explanation}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Top Pathologies */}
+                <div className="mb-4">
+                  <h4 className="font-medium text-gray-800 mb-2">Detected Pathologies</h4>
+                  <div className="space-y-2">
+                    {xrayAnalysisResult.analysis.xray.pathologies.slice(0, 5).map(([pathology, probability], index) => (
+                      <div key={index} className="flex items-center justify-between bg-white p-2 rounded border border-blue-100">
+                        <span className="text-sm text-gray-700">{pathology}</span>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-20 bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full" 
+                              style={{ width: `${probability * 100}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-xs text-gray-600 w-10">
+                            {(probability * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Grad-CAM Visualization */}
+                {xrayAnalysisResult.analysis.xray.gradcam_b64 && (
+                  <div className="mb-4">
+                    <h4 className="font-medium text-gray-800 mb-2">Heat Map Visualization</h4>
+                    <div className="bg-white p-2 rounded border border-blue-100">
+                      <img 
+                        src={`data:image/png;base64,${xrayAnalysisResult.analysis.xray.gradcam_b64}`}
+                        alt="Grad-CAM heat map"
+                        className="w-full max-w-md mx-auto rounded"
+                      />
+                      <p className="text-xs text-gray-500 text-center mt-2">
+                        Heat map showing areas of interest for the AI analysis
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
 
             {/* Upload Error */}
             {uploadError && (
