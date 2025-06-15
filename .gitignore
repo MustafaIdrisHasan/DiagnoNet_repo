@@ -33,6 +33,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+cxr_env/
+*/cxr_env/
 
 # IDE files
 .vscode/
