@@ -89,6 +89,7 @@ coverage.xml
 *.safetensors
 *.bin
 *.h5
+*.zip
 
 # Jupyter Notebook
 .ipynb_checkpoints
