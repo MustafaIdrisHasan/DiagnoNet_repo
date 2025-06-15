@@ -543,8 +543,10 @@ const VitalsApp: React.FC = () => {
               )}
             </div>
 
+
+
             {/* X-ray Analysis Results */}
-            {xrayAnalysisResult && xrayAnalysisResult.analysis.xray && (
+            {xrayAnalysisResult && xrayAnalysisResult.analysis && xrayAnalysisResult.analysis.xray && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -569,7 +571,8 @@ const VitalsApp: React.FC = () => {
                 </div>
 
                 {/* Ollama Clinical Analysis - Dedicated Section */}
-                {xrayAnalysisResult.analysis.xray.clinical_explanation && (
+                {xrayAnalysisResult.analysis.xray.clinical_explanation && 
+                 !xrayAnalysisResult.analysis.xray.clinical_explanation.includes('❌') && (
                   <div className="mb-6">
                     <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
                       <h4 className="font-semibold text-purple-800 mb-3 flex items-center">
