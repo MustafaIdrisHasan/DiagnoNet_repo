@@ -534,8 +534,8 @@ const VitalsApp: React.FC = () => {
 
                   {/* Analysis Status */}
                   {xrayAnalysisResult && (
-                    <div className="flex items-center justify-center space-x-2 text-sm text-green-600">
-                      <CheckCircle className="w-4 h-4" />
+                  <div className="flex items-center justify-center space-x-2 text-sm text-green-600">
+                    <CheckCircle className="w-4 h-4" />
                       <span>X-ray analysis completed successfully</span>
                     </div>
                   )}
@@ -575,7 +575,7 @@ const VitalsApp: React.FC = () => {
                             </p>
                           </div>
                         </div>
-                      </div>
+                  </div>
                     </motion.div>
                   )}
                 </div>
