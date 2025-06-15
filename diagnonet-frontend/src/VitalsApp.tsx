@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, ChangeEvent } from 'react';
 import { motion } from 'framer-motion';
 import { Heart, Thermometer, Activity, Gauge, Wind, Droplets, AlertCircle, Loader2, Brain, Upload, X, FileImage, CheckCircle } from 'lucide-react';
 
@@ -96,7 +96,7 @@ const VitalsApp: React.FC = () => {
     }
   };
 
-  const handleXRayUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleXRayUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     setUploadError(null);
     setXrayAnalysisResult(null);
@@ -122,7 +122,7 @@ const VitalsApp: React.FC = () => {
 
     // Create preview
     const reader = new FileReader();
-    reader.onload = async (e) => {
+    reader.onload = (e) => {
       const xrayFileData = {
         file,
         preview: e.target?.result as string,
@@ -130,32 +130,43 @@ const VitalsApp: React.FC = () => {
         size: file.size
       };
       setXrayFile(xrayFileData);
-
-      // Automatically analyze the X-ray
-      setXrayAnalyzing(true);
-      try {
-        const formData = new FormData();
-        formData.append('xray_image', file);
-
-        const response = await fetch('http://localhost:8000/analyze-xray', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || 'Failed to analyze X-ray');
-        }
-
-        const analysisData: XRayAnalysisResult = await response.json();
-        setXrayAnalysisResult(analysisData);
-      } catch (err) {
-        setUploadError(err instanceof Error ? err.message : 'X-ray analysis failed');
-      } finally {
-        setXrayAnalyzing(false);
-      }
     };
     reader.readAsDataURL(file);
+  };
+
+  const processXRayAnalysis = async () => {
+    if (!xrayFile) {
+      setUploadError('Please upload an X-ray image first.');
+      return;
+    }
+
+    setXrayAnalyzing(true);
+    setUploadError(null);
+    setXrayAnalysisResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('xray_image', xrayFile.file);
+      formData.append('topk', '5');
+      formData.append('mc_dropout', '0');
+
+      const response = await fetch('http://localhost:8000/analyze-xray', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to analyze X-ray');
+      }
+
+      const analysisData: XRayAnalysisResult = await response.json();
+      setXrayAnalysisResult(analysisData);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'X-ray analysis failed');
+    } finally {
+      setXrayAnalyzing(false);
+    }
   };
 
   const removeXRayFile = () => {
@@ -500,21 +511,32 @@ const VitalsApp: React.FC = () => {
                     />
                   </div>
 
+                  {/* Process X-ray Button */}
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={processXRayAnalysis}
+                    disabled={xrayAnalyzing}
+                    className="btn-primary w-full"
+                  >
+                    {xrayAnalyzing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Processing X-ray with AI...
+                      </>
+                    ) : (
+                      <>
+                        <Brain className="w-4 h-4 mr-2" />
+                        Process X-ray & Generate Grad-CAM
+                      </>
+                    )}
+                  </motion.button>
+
                   {/* Analysis Status */}
-                  {xrayAnalyzing ? (
-                    <div className="flex items-center justify-center space-x-2 text-sm text-blue-600">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Analyzing X-ray image...</span>
-                    </div>
-                  ) : xrayAnalysisResult ? (
+                  {xrayAnalysisResult && (
                     <div className="flex items-center justify-center space-x-2 text-sm text-green-600">
                       <CheckCircle className="w-4 h-4" />
-                      <span>X-ray analysis completed</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center space-x-2 text-sm text-green-600">
-                      <CheckCircle className="w-4 h-4" />
-                      <span>X-ray image ready for analysis</span>
+                      <span>X-ray analysis completed successfully</span>
                     </div>
                   )}
                 </div>
@@ -546,14 +568,36 @@ const VitalsApp: React.FC = () => {
                   </p>
                 </div>
 
-                {/* Clinical Explanation */}
+                {/* Ollama Clinical Analysis - Dedicated Section */}
                 {xrayAnalysisResult.analysis.xray.clinical_explanation && (
-                  <div className="mb-4">
-                    <h4 className="font-medium text-gray-800 mb-2">Clinical Interpretation</h4>
-                    <div className="bg-white p-3 rounded border border-blue-100">
-                      <p className="text-gray-700 text-sm leading-relaxed">
-                        {xrayAnalysisResult.analysis.xray.clinical_explanation}
-                      </p>
+                  <div className="mb-6">
+                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-purple-800 mb-3 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 mr-2">
+                          <path d="M12 8V4H8"/>
+                          <rect width="16" height="12" x="4" y="8" rx="2"/>
+                          <path d="M2 14h2"/>
+                          <path d="M20 14h2"/>
+                          <path d="M15 13v2"/>
+                          <path d="M9 13v2"/>
+                        </svg>
+                        Ollama AI Clinical Analysis
+                      </h4>
+                      <div className="bg-white rounded-lg p-4 border border-purple-100 shadow-sm">
+                        <div className="prose prose-sm max-w-none">
+                          <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                            {xrayAnalysisResult.analysis.xray.clinical_explanation}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-purple-100">
+                        <span className="text-xs text-purple-600 font-medium">
+                          Powered by Ollama LLM
+                        </span>
+                        <span className="text-xs text-purple-500">
+                          AI-Generated Clinical Interpretation
+                        </span>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -581,19 +625,33 @@ const VitalsApp: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Grad-CAM Visualization */}
+                {/* Grad-CAM Visualization - Enhanced Display */}
                 {xrayAnalysisResult.analysis.xray.gradcam_b64 && (
                   <div className="mb-4">
-                    <h4 className="font-medium text-gray-800 mb-2">Heat Map Visualization</h4>
-                    <div className="bg-white p-2 rounded border border-blue-100">
-                      <img 
-                        src={`data:image/png;base64,${xrayAnalysisResult.analysis.xray.gradcam_b64}`}
-                        alt="Grad-CAM heat map"
-                        className="w-full max-w-md mx-auto rounded"
-                      />
-                      <p className="text-xs text-gray-500 text-center mt-2">
-                        Heat map showing areas of interest for the AI analysis
-                      </p>
+                    <h4 className="font-medium text-gray-800 mb-3 flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-2 text-orange-600">
+                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                        <circle cx="9" cy="9" r="2"/>
+                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                      </svg>
+                      Grad-CAM Heat Map Visualization
+                    </h4>
+                    <div className="bg-gradient-to-br from-orange-50 to-red-50 p-4 rounded-lg border border-orange-200">
+                      <div className="bg-white p-3 rounded-lg border border-orange-100 shadow-sm">
+                        <img 
+                          src={`data:image/png;base64,${xrayAnalysisResult.analysis.xray.gradcam_b64}`}
+                          alt="Grad-CAM heat map visualization"
+                          className="w-full max-w-lg mx-auto rounded-lg shadow-md"
+                        />
+                        <div className="mt-3 pt-3 border-t border-orange-100">
+                          <p className="text-xs text-orange-700 text-center">
+                            🔥 Heat map highlighting regions of medical significance detected by AI
+                          </p>
+                          <p className="text-xs text-orange-600 text-center mt-1">
+                            Warmer colors indicate areas of higher diagnostic importance
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
