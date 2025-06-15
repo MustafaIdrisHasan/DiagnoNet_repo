@@ -27,3 +27,6 @@ scikit-image==0.22.0
 matplotlib==3.8.0
 pytorch-grad-cam==1.4.8
 opencv-python==4.8.1.78
+
+# Database dependencies
+psycopg2-binary==2.9.7
