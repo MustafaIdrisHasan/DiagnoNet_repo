@@ -539,121 +539,164 @@ const VitalsApp: React.FC = () => {
                       <span>X-ray analysis completed successfully</span>
                     </div>
                   )}
+
+                  {/* Grad-CAM Visualization - Show immediately after processing */}
+                  {xrayAnalysisResult?.analysis?.xray?.gradcam_b64 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-4"
+                    >
+                      <div className="bg-gradient-to-br from-orange-50 to-red-50 p-4 rounded-lg border border-orange-200">
+                        <h4 className="font-semibold text-orange-800 mb-3 flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 mr-2">
+                            <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                            <circle cx="9" cy="9" r="2"/>
+                            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                          </svg>
+                          🔥 AI Heat Map - Regions of Interest
+                        </h4>
+                        <div className="bg-white p-3 rounded-lg border border-orange-100 shadow-sm">
+                          <img 
+                            src={`data:image/png;base64,${xrayAnalysisResult.analysis.xray.gradcam_b64}`}
+                            alt="Grad-CAM heat map visualization"
+                            className="w-full max-w-2xl mx-auto rounded-lg shadow-md"
+                            style={{ maxHeight: '500px', objectFit: 'contain' }}
+                          />
+                          <div className="mt-3 pt-3 border-t border-orange-100 text-center">
+                            <p className="text-sm font-medium text-orange-800 mb-1">
+                              🎯 Focus Areas for: {xrayAnalysisResult.analysis.xray.top_label}
+                            </p>
+                            <p className="text-xs text-orange-700">
+                              Red/Yellow areas indicate regions where the AI detected abnormalities
+                            </p>
+                            <p className="text-xs text-orange-600 mt-1">
+                              Confidence: {(xrayAnalysisResult.analysis.xray.top_prob * 100).toFixed(1)}% • Generated using Grad-CAM++
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
               )}
             </div>
 
-
-
-            {/* X-ray Analysis Results */}
+            {/* X-ray Analysis Results Section - Comprehensive Display */}
             {xrayAnalysisResult && xrayAnalysisResult.analysis && xrayAnalysisResult.analysis.xray && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg"
+                className="mt-6 space-y-6"
               >
-                <h3 className="font-semibold text-blue-800 mb-4 flex items-center">
-                  <Brain className="w-5 h-5 mr-2" />
-                  X-Ray AI Analysis Results
-                </h3>
-                
-                {/* Top Finding */}
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-gray-800">Primary Finding</h4>
-                    <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                      {(xrayAnalysisResult.analysis.xray.top_prob * 100).toFixed(1)}% confidence
-                    </span>
-                  </div>
-                  <p className="text-lg font-semibold text-gray-900">
-                    {xrayAnalysisResult.analysis.xray.top_label}
-                  </p>
-                </div>
-
-                {/* Ollama Clinical Analysis - Dedicated Section */}
-                {xrayAnalysisResult.analysis.xray.clinical_explanation && 
-                 !xrayAnalysisResult.analysis.xray.clinical_explanation.includes('❌') && (
-                  <div className="mb-6">
-                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-purple-800 mb-3 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 mr-2">
-                          <path d="M12 8V4H8"/>
-                          <rect width="16" height="12" x="4" y="8" rx="2"/>
-                          <path d="M2 14h2"/>
-                          <path d="M20 14h2"/>
-                          <path d="M15 13v2"/>
-                          <path d="M9 13v2"/>
-                        </svg>
-                        Ollama AI Clinical Analysis
-                      </h4>
-                      <div className="bg-white rounded-lg p-4 border border-purple-100 shadow-sm">
-                        <div className="prose prose-sm max-w-none">
-                          <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
-                            {xrayAnalysisResult.analysis.xray.clinical_explanation}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-purple-100">
-                        <span className="text-xs text-purple-600 font-medium">
-                          Powered by Ollama LLM
+                {/* Primary Findings Card */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+                  <h3 className="font-bold text-blue-900 text-lg mb-4 flex items-center">
+                    <Brain className="w-6 h-6 mr-2" />
+                    🏥 Primary AI Analysis Results
+                  </h3>
+                  
+                  {/* Top Finding Highlight */}
+                  <div className="bg-white rounded-lg p-4 border border-blue-100 shadow-sm mb-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-lg font-semibold text-gray-800">🎯 Primary Finding</h4>
+                      <div className="text-right">
+                        <span className="text-2xl font-bold text-blue-600">
+                          {(xrayAnalysisResult.analysis.xray.top_prob * 100).toFixed(1)}%
                         </span>
-                        <span className="text-xs text-purple-500">
-                          AI-Generated Clinical Interpretation
-                        </span>
+                        <p className="text-xs text-gray-500">Confidence</p>
                       </div>
                     </div>
-                  </div>
-                )}
-
-                {/* Top Pathologies */}
-                <div className="mb-4">
-                  <h4 className="font-medium text-gray-800 mb-2">Detected Pathologies</h4>
-                  <div className="space-y-2">
-                    {xrayAnalysisResult.analysis.xray.pathologies.slice(0, 5).map(([pathology, probability], index) => (
-                      <div key={index} className="flex items-center justify-between bg-white p-2 rounded border border-blue-100">
-                        <span className="text-sm text-gray-700">{pathology}</span>
-                        <div className="flex items-center space-x-2">
-                          <div className="w-20 bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-blue-600 h-2 rounded-full" 
-                              style={{ width: `${probability * 100}%` }}
-                            ></div>
-                          </div>
-                          <span className="text-xs text-gray-600 w-10">
-                            {(probability * 100).toFixed(1)}%
-                          </span>
-                        </div>
+                    <p className="text-xl font-bold text-gray-900 mb-2">
+                      {xrayAnalysisResult.analysis.xray.top_label}
+                    </p>
+                    {xrayAnalysisResult.analysis.xray.top_prob > 0.5 ? (
+                      <div className="flex items-center text-sm text-orange-600">
+                        <AlertCircle className="w-4 h-4 mr-1" />
+                        <span>Significant finding detected - requires medical review</span>
                       </div>
-                    ))}
+                    ) : (
+                      <div className="flex items-center text-sm text-green-600">
+                        <CheckCircle className="w-4 h-4 mr-1" />
+                        <span>Low probability finding</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Detailed Pathology Breakdown */}
+                  <div className="bg-white rounded-lg p-4 border border-blue-100 shadow-sm">
+                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+                      📊 Detailed Pathology Analysis
+                      <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                        Top 8 Findings
+                      </span>
+                    </h4>
+                    <div className="space-y-3">
+                      {xrayAnalysisResult.analysis.xray.pathologies.slice(0, 8).map(([pathology, probability], index) => (
+                        <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border">
+                          <div className="flex items-center space-x-3">
+                            <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                              index === 0 ? 'bg-red-100 text-red-800' :
+                              index < 3 ? 'bg-orange-100 text-orange-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {index + 1}
+                            </span>
+                            <span className="font-medium text-gray-700">{pathology}</span>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <div className="w-24 bg-gray-200 rounded-full h-2.5">
+                              <div 
+                                className={`h-2.5 rounded-full ${
+                                  probability > 0.7 ? 'bg-red-500' :
+                                  probability > 0.4 ? 'bg-orange-500' :
+                                  probability > 0.2 ? 'bg-yellow-500' :
+                                  'bg-green-500'
+                                }`}
+                                style={{ width: `${Math.max(probability * 100, 5)}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-sm font-semibold text-gray-600 w-12 text-right">
+                              {(probability * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-
-                {/* Grad-CAM Visualization - Enhanced Display */}
-                {xrayAnalysisResult.analysis.xray.gradcam_b64 && (
-                  <div className="mb-4">
-                    <h4 className="font-medium text-gray-800 mb-3 flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-2 text-orange-600">
-                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
-                        <circle cx="9" cy="9" r="2"/>
-                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                
+                {/* Ollama Clinical Analysis - Enhanced Section */}
+                {xrayAnalysisResult.analysis.xray.clinical_explanation && 
+                 !xrayAnalysisResult.analysis.xray.clinical_explanation.includes('❌') && (
+                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6">
+                    <h3 className="font-bold text-purple-900 text-lg mb-4 flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 mr-2">
+                        <path d="M12 8V4H8"/>
+                        <rect width="16" height="12" x="4" y="8" rx="2"/>
+                        <path d="M2 14h2"/>
+                        <path d="M20 14h2"/>
+                        <path d="M15 13v2"/>
+                        <path d="M9 13v2"/>
                       </svg>
-                      Grad-CAM Heat Map Visualization
-                    </h4>
-                    <div className="bg-gradient-to-br from-orange-50 to-red-50 p-4 rounded-lg border border-orange-200">
-                      <div className="bg-white p-3 rounded-lg border border-orange-100 shadow-sm">
-                        <img 
-                          src={`data:image/png;base64,${xrayAnalysisResult.analysis.xray.gradcam_b64}`}
-                          alt="Grad-CAM heat map visualization"
-                          className="w-full max-w-lg mx-auto rounded-lg shadow-md"
-                        />
-                        <div className="mt-3 pt-3 border-t border-orange-100">
-                          <p className="text-xs text-orange-700 text-center">
-                            🔥 Heat map highlighting regions of medical significance detected by AI
-                          </p>
-                          <p className="text-xs text-orange-600 text-center mt-1">
-                            Warmer colors indicate areas of higher diagnostic importance
-                          </p>
+                      🤖 Clinical AI Interpretation
+                    </h3>
+                    <div className="bg-white rounded-lg p-5 border border-purple-100 shadow-sm">
+                      <div className="prose prose-sm max-w-none">
+                        <p className="text-gray-800 leading-relaxed whitespace-pre-wrap text-base">
+                          {xrayAnalysisResult.analysis.xray.clinical_explanation}
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between mt-4 pt-4 border-t border-purple-100">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                          <span className="text-sm text-purple-700 font-medium">
+                            Powered by Ollama LLM (llama3.2:latest)
+                          </span>
                         </div>
+                        <span className="text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded">
+                          AI-Generated Clinical Interpretation
+                        </span>
                       </div>
                     </div>
                   </div>

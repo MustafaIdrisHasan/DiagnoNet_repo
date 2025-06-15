@@ -77,7 +77,7 @@ async def analyze_xray_endpoint(
         save_to_db(xray_image.filename, res, gradcam_path)
         
         # 4. respond
-        return {"success": True, "analysis": res}
+        return {"success": True, "analysis": {"xray": res}, "filename": xray_image.filename}
         
     except Exception as e:
         raise HTTPException(500, f"Server error: {str(e)}")
