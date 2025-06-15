@@ -668,7 +668,8 @@ const VitalsApp: React.FC = () => {
                 
                 {/* Ollama Clinical Analysis - Enhanced Section */}
                 {xrayAnalysisResult.analysis.xray.clinical_explanation && 
-                 !xrayAnalysisResult.analysis.xray.clinical_explanation.includes('❌') && (
+                 !xrayAnalysisResult.analysis.xray.clinical_explanation.includes('❌') &&
+                 !xrayAnalysisResult.analysis.xray.clinical_explanation.includes('I can\'t fulfill') && (
                   <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6">
                     <h3 className="font-bold text-purple-900 text-lg mb-4 flex items-center">
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 mr-2">
